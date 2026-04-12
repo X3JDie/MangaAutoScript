@@ -7,6 +7,7 @@
 // @match        https://mangabuff.ru/clubs/*/boost*
 // @match        https://mangabuff.ru/cards/*/users*
 // @grant        window.close
+// @require
 // ==/UserScript==
 
 (function() {
