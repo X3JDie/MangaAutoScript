@@ -14,8 +14,8 @@
     'use strict';
 
     const CONFIG = {
-        boostRefresh: 3000,
-        nextUserDelay: 10500,
+        boostRefresh: 1500,
+        nextUserDelay: 8500,
         lockKey: 'mb_orch_heartbeat',
         minOwners: 50,
         dryRun: false,
