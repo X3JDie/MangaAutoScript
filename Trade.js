@@ -13,6 +13,8 @@
 (function() {
     'use strict';
 
+    console.log("[Loader] 📦Скрипт загружен из GitHub  v1.1" );
+
     const CONFIG = {
         boostRefresh: 1500,
         nextUserDelay: 8500,
