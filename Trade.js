@@ -1,64 +1,60 @@
 // ==UserScript==
-// @name         MangaBuff
-// @version      1
-// @description Кнопка запуска в панели
-// @author       @X3JDie
+// @name         MangaBuff Turbo Orchestrator v14.1
+// @version      14.1
+// @description  STEALTH: Удалена информационная панель, оставлено только управление в блоке буста
+// @author       Gemini & User
 // @match        https://mangabuff.ru/alliances/*/boost*
 // @match        https://mangabuff.ru/clubs/*/boost*
 // @match        https://mangabuff.ru/cards/*/users*
 // @grant        window.close
-// @require
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    console.log("[Loader] 📦Скрипт загружен из GitHub  v1.1" );
-
+    console.log("[Loader] 📦Скрипт вклады загружен из GitHub  v2.0" );
+    
     const CONFIG = {
-        boostRefresh: 1000,
-        nextUserDelay: 10500,
+        boostRefresh: 1500,
+        nextUserDelay: 8500,
         lockKey: 'mb_orch_heartbeat',
         minOwners: 50,
-        dryRun: false,
-        activeKey: 'mb_orch_is_active' 
+        activeKey: 'mb_orch_is_active'
     };
 
-    const log = (msg, color = '#e0b21e', cardData = {}) => {
-        let panel = document.getElementById('mb-status-panel');
-        if (!panel) {
-            panel = document.createElement('div');
-            panel.id = 'mb-status-panel';
-            panel.style = 'position:fixed; top:10px; right:10px; z-index:10000; padding:15px; background:rgba(0,0,0,0.95); color:white; border-radius:8px; border-left:4px solid ' + color + '; font-family:monospace; font-size:12px; min-width:320px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); pointer-events:auto;';
-            document.body.appendChild(panel);
-        }
+    const injectInterface = () => {
+        const findCardBtn = document.querySelector('a[href*="/cards/"][href*="/users"].button--block');
+        if (!findCardBtn || document.getElementById('mb-toggle-btn')) return;
 
         const isActive = localStorage.getItem(CONFIG.activeKey) === 'true';
+        const toggleBtn = document.createElement('button');
+        toggleBtn.id = 'mb-toggle-btn';
+        toggleBtn.className = 'button button--block';
+        toggleBtn.style.marginTop = '10px';
+        toggleBtn.style.transition = 'all 0.3s';
 
-        let cardHTML = cardData.current ? `<div style="margin-top:8px; padding-top:8px; border-top:1px solid #444; font-size:10px;"><div style="color:#aaa;">ID КАРТИНКИ: <span style="color:#fff;">${cardData.current}</span></div><div style="color:#aaa; margin-top:5px;">СТРАНИЦА: <span style="color:#3b82f6;">${cardData.page || '1'}</span></div></div>` : '';
+        if (isActive) {
+            toggleBtn.innerText = 'ОСТАНОВИТЬ СКРИПТ';
+            toggleBtn.style.backgroundColor = '#ef4444';
+            toggleBtn.style.borderColor = '#b91c1c';
+        } else {
+            toggleBtn.innerText = 'ЗАПУСТИТЬ СКРИПТ';
+            toggleBtn.style.backgroundColor = '#10b981';
+            toggleBtn.style.borderColor = '#047857';
+        }
 
-        panel.style.borderLeftColor = isActive ? '#10b981' : '#ef4444';
-
-        panel.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="color:#3b82f6; font-size:10px; font-weight:bold;">TURBO v13.9</span>
-                <button id="mb-toggle-btn" style="cursor:pointer; padding:4px 8px; border:none; border-radius:4px; background:${isActive ? '#ef4444' : '#10b981'}; color:white; font-weight:bold; font-size:10px;">
-                    ${isActive ? 'STOP' : 'START'}
-                </button>
-            </div>
-            <div style="font-size:13px; font-weight:bold;">${isActive ? msg : 'СКРИПТ НА ПАУЗЕ'}</div>
-            ${isActive ? cardHTML : '<div style="color:#888; font-size:11px; margin-top:5px;">Нажмите START для начала</div>'}
-        `;
-
-        document.getElementById('mb-toggle-btn').onclick = () => {
+        toggleBtn.onclick = (e) => {
+            e.preventDefault();
             const newState = !(localStorage.getItem(CONFIG.activeKey) === 'true');
             localStorage.setItem(CONFIG.activeKey, newState);
             window.location.reload();
         };
+
+        findCardBtn.parentNode.insertBefore(toggleBtn, findCardBtn.nextSibling);
     };
 
     const getImgId = (src) => {
-        if (!src || src === 'NOT_FOUND') return 'NOT_FOUND';
+        if (!src) return 'NOT_FOUND';
         const parts = src.split('/');
         return parts[parts.length - 1];
     };
@@ -69,6 +65,7 @@
         const response = await originalFetch(...args);
         if (args[0].includes('/trades/create') && response.status === 422) {
             lastRequestFailed = true;
+            console.warn("[Orchestrator] Ошибка 422: Пропуск пользователя.");
         }
         return response;
     };
@@ -81,20 +78,17 @@
         const isActive = localStorage.getItem(CONFIG.activeKey) === 'true';
         const url = new URL(window.location.href);
 
-        if (!isActive) {
-            log("ПАУЗА", "#666");
-            return;
-        }
+        if (url.pathname.includes('/boost')) injectInterface();
+        if (!isActive) return;
 
-        
         if (url.pathname.includes('/boost')) {
             const cardImg = document.querySelector('img[src*="/img/cards/"]');
             const cardLink = document.querySelector('a[href*="/cards/"]');
-            const currentCardId = getImgId(cardImg ? cardImg.src : 'NOT_FOUND');
+            const currentCardId = getImgId(cardImg ? cardImg.src : null);
             const savedCardId = localStorage.getItem('mb_last_card_img_id');
 
             if (savedCardId && savedCardId !== currentCardId && currentCardId !== 'NOT_FOUND') {
-                log("СМЕНА КАРТЫ!", "#ef4444");
+                console.log("[Orchestrator] Карта изменилась. Сброс поиска.");
                 localStorage.setItem('mb_kill_search', Date.now().toString());
                 await fastRejectAll();
                 localStorage.setItem('mb_last_card_img_id', currentCardId);
@@ -105,7 +99,7 @@
 
             const btn = document.querySelector('.club__boost-btn, .alliance__boost-btn') || [...document.querySelectorAll('button')].find(el => el.textContent.includes('Внести вклад'));
             if (btn && !btn.disabled) {
-                log("ВНОШУ ВКЛАД...", "#10b981");
+                console.log("[Orchestrator] Вклад доступен. Выполняю.");
                 localStorage.setItem('mb_kill_search', Date.now().toString());
                 await fastRejectAll();
                 btn.click();
@@ -113,7 +107,6 @@
                 return;
             }
 
-            log("МОНИТОРИНГ БУСТА", "#e0b21e", { current: currentCardId });
             const lastHb = parseInt(localStorage.getItem(CONFIG.lockKey) || '0');
             if (cardLink && (Date.now() - lastHb) > 12000) {
                 localStorage.setItem(CONFIG.lockKey, Date.now().toString());
@@ -127,7 +120,6 @@
         if (url.pathname.includes('/cards/') && url.pathname.includes('/users')) {
             setInterval(() => {
                 if (Date.now() - parseInt(localStorage.getItem('mb_kill_search') || '0') < 5000) window.close();
-                
                 if (localStorage.getItem(CONFIG.activeKey) !== 'true') window.close();
             }, 800);
 
@@ -141,7 +133,7 @@
             if (targetLink) {
                 targetLink.setAttribute('data-orch-done', 'true');
                 const btn = targetLink.nextElementSibling?.querySelector('button');
-                log(`ОБМЕН: ${targetLink.innerText.trim()}`, "#3b82f6", { current: getImgId(document.querySelector('img[src*="/img/cards/"]')?.src), page: currentPage });
+                console.log(`[Orchestrator] Обмен с ${targetLink.innerText.trim()} (Стр. ${currentPage})`);
 
                 if (btn) {
                     lastRequestFailed = false;
@@ -154,12 +146,10 @@
                             run();
                         }
                     }, 200);
-                } else {
-                    run();
-                }
+                } else { run(); }
             } else {
                 const nextPage = currentPage + 1;
-                log(`СЛЕД. СТРАНИЦА: ${nextPage}`, "#8b5cf6");
+                console.log(`[Orchestrator] Переход на страницу ${nextPage}`);
                 url.searchParams.set('page', nextPage);
                 window.location.replace(url.toString());
             }
