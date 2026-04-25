@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         MangaBuff Вклады
-// @version      1.2
+// @version      1.3
 // @author       X3JDie
 // @match        https://mangabuff.ru/alliances/*/boost*
 // @match        https://mangabuff.ru/clubs/*/boost*
 // @match        https://mangabuff.ru/cards/*/users*
-// @grant        window.close
 // @grant        GM_openInTab
+// @grant        window.close
 // ==/UserScript==
 
 (function() {
