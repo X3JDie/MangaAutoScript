@@ -16,7 +16,7 @@
     
     const CONFIG = {
         boostRefresh: 1500,
-        nextUserDelay: 8500,
+        nextUserDelay: 11000,
         lockKey: 'mb_orch_heartbeat',
         minOwners: 50,
         activeKey: 'mb_orch_is_active'
